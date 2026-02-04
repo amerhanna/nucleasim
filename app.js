@@ -59,6 +59,8 @@ const buildComponentTemplate = (type) => {
 };
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+const CANVAS_DIMENSIONS = { width: 1400, height: 900 };
+const ZOOM_RANGE = { min: 0.6, max: 1.6 };
 
 const App = () => {
   const [components, setComponents] = useState(INITIAL_COMPONENTS);
@@ -68,6 +70,9 @@ const App = () => {
   const [connectMode, setConnectMode] = useState(false);
   const [connectStart, setConnectStart] = useState(null);
   const [dragState, setDragState] = useState(null);
+  const [pan, setPan] = useState({ x: 40, y: 40 });
+  const [zoom, setZoom] = useState(1);
+  const [panDrag, setPanDrag] = useState(null);
   const [activity, setActivity] = useState("Ready. Drag components onto the canvas.");
   const canvasRef = useRef(null);
 
@@ -95,9 +100,9 @@ const App = () => {
     if (!type) return;
     const template = buildComponentTemplate(type);
     if (!template) return;
-    const bounds = canvasRef.current.getBoundingClientRect();
-    template.x = clamp(event.clientX - bounds.left - 70, 20, bounds.width - 180);
-    template.y = clamp(event.clientY - bounds.top - 30, 20, bounds.height - 120);
+    const { x, y } = getCanvasPoint(event);
+    template.x = clamp(x - 70, 20, CANVAS_DIMENSIONS.width - 180);
+    template.y = clamp(y - 30, 20, CANVAS_DIMENSIONS.height - 120);
     setComponents((prev) => [...prev, template]);
     setActivity(`${COMPONENT_LIBRARY.find((item) => item.type === type).label} added.`);
   };
@@ -108,28 +113,67 @@ const App = () => {
   };
 
   const handleNodeMouseDown = (event, nodeId) => {
+    event.stopPropagation();
     if (connectMode) return;
-    const bounds = canvasRef.current.getBoundingClientRect();
+    const { x, y } = getCanvasPoint(event);
     const node = componentMap.get(nodeId);
     setDragState({
       nodeId,
-      offsetX: event.clientX - bounds.left - node.x,
-      offsetY: event.clientY - bounds.top - node.y,
+      offsetX: x - node.x,
+      offsetY: y - node.y,
     });
+  };
+
+  const handleCanvasMouseDown = (event) => {
+    if (event.target !== canvasRef.current) return;
+    setPanDrag({
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: pan.x,
+      originY: pan.y,
+    });
+  };
+
+  const getCanvasPoint = (event) => {
+    const bounds = canvasRef.current.getBoundingClientRect();
+    return {
+      x: (event.clientX - bounds.left - pan.x) / zoom,
+      y: (event.clientY - bounds.top - pan.y) / zoom,
+    };
+  };
+
+  const handleCanvasWheel = (event) => {
+    event.preventDefault();
+    const bounds = canvasRef.current.getBoundingClientRect();
+    const point = getCanvasPoint(event);
+    const zoomDelta = -event.deltaY * 0.001;
+    const nextZoom = clamp(zoom + zoomDelta, ZOOM_RANGE.min, ZOOM_RANGE.max);
+    const nextPanX = event.clientX - bounds.left - point.x * nextZoom;
+    const nextPanY = event.clientY - bounds.top - point.y * nextZoom;
+    setZoom(nextZoom);
+    setPan({ x: nextPanX, y: nextPanY });
   };
 
   useEffect(() => {
     const handleMouseMove = (event) => {
-      if (!dragState) return;
-      const bounds = canvasRef.current.getBoundingClientRect();
-      const nextX = clamp(event.clientX - bounds.left - dragState.offsetX, 20, bounds.width - 180);
-      const nextY = clamp(event.clientY - bounds.top - dragState.offsetY, 20, bounds.height - 120);
-      setComponents((prev) =>
-        prev.map((node) => (node.id === dragState.nodeId ? { ...node, x: nextX, y: nextY } : node))
-      );
+      if (dragState) {
+        const { x, y } = getCanvasPoint(event);
+        const nextX = clamp(x - dragState.offsetX, 20, CANVAS_DIMENSIONS.width - 180);
+        const nextY = clamp(y - dragState.offsetY, 20, CANVAS_DIMENSIONS.height - 120);
+        setComponents((prev) =>
+          prev.map((node) => (node.id === dragState.nodeId ? { ...node, x: nextX, y: nextY } : node))
+        );
+        return;
+      }
+      if (panDrag) {
+        const nextX = panDrag.originX + (event.clientX - panDrag.startX);
+        const nextY = panDrag.originY + (event.clientY - panDrag.startY);
+        setPan({ x: nextX, y: nextY });
+      }
     };
     const handleMouseUp = () => {
       if (dragState) setDragState(null);
+      if (panDrag) setPanDrag(null);
     };
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
@@ -137,7 +181,7 @@ const App = () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [dragState]);
+  }, [dragState, panDrag, pan, zoom]);
 
   const handleNodeClick = (nodeId) => {
     if (!connectMode) return;
@@ -236,59 +280,70 @@ const App = () => {
           </div>
           <div
             ref={canvasRef}
-            className={`canvas-area ${connectMode ? "connect" : ""}`}
+            className={`canvas-area ${connectMode ? "connect" : ""} ${panDrag ? "panning" : ""}`}
             onDrop={handleCanvasDrop}
             onDragOver={handleCanvasDragOver}
+            onMouseDown={handleCanvasMouseDown}
+            onWheel={handleCanvasWheel}
           >
-            <svg className="connection-layer">
-              {connections.map((link) => {
-                const from = nodeRects[link.from];
-                const to = nodeRects[link.to];
-                if (!from || !to) return null;
-                const startX = from.x + from.width;
-                const startY = from.y + from.height / 2;
-                const endX = to.x;
-                const endY = to.y + to.height / 2;
-                const midX = (startX + endX) / 2;
+            <div
+              className="canvas-content"
+              style={{
+                width: `${CANVAS_DIMENSIONS.width}px`,
+                height: `${CANVAS_DIMENSIONS.height}px`,
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+              }}
+            >
+              <svg className="connection-layer">
+                {connections.map((link) => {
+                  const from = nodeRects[link.from];
+                  const to = nodeRects[link.to];
+                  if (!from || !to) return null;
+                  const startX = from.x + from.width;
+                  const startY = from.y + from.height / 2;
+                  const endX = to.x;
+                  const endY = to.y + to.height / 2;
+                  const midX = (startX + endX) / 2;
+                  return (
+                    <path
+                      key={link.id}
+                      d={`M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`}
+                      className="connection-line"
+                    />
+                  );
+                })}
+              </svg>
+              {components.map((node) => {
+                const definition = COMPONENT_LIBRARY.find((item) => item.type === node.type);
                 return (
-                  <path
-                    key={link.id}
-                    d={`M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`}
-                    className="connection-line"
-                  />
+                  <div
+                    key={node.id}
+                    className={`node-card ${selectedNode === node.id ? "selected" : ""}`}
+                    style={{ left: node.x, top: node.y }}
+                    onMouseDown={(event) => handleNodeMouseDown(event, node.id)}
+                    onClick={() => {
+                      handleNodeClick(node.id);
+                      handleSelectNode(node.id);
+                    }}
+                  >
+                    <div className="node-title">{definition?.label}</div>
+                    <div className="node-meta">ID: {node.id}</div>
+                    <div className="node-tags">
+                      {Object.entries(node.params).map(([key, value]) => (
+                        <span key={key}>
+                          {key}: {value}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 );
               })}
-            </svg>
-            {components.map((node) => {
-              const definition = COMPONENT_LIBRARY.find((item) => item.type === node.type);
-              return (
-                <div
-                  key={node.id}
-                  className={`node-card ${selectedNode === node.id ? "selected" : ""}`}
-                  style={{ left: node.x, top: node.y }}
-                  onMouseDown={(event) => handleNodeMouseDown(event, node.id)}
-                  onClick={() => {
-                    handleNodeClick(node.id);
-                    handleSelectNode(node.id);
-                  }}
-                >
-                  <div className="node-title">{definition?.label}</div>
-                  <div className="node-meta">ID: {node.id}</div>
-                  <div className="node-tags">
-                    {Object.entries(node.params).map(([key, value]) => (
-                      <span key={key}>
-                        {key}: {value}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+            </div>
           </div>
           <p className="canvas-hint">
             {connectMode
               ? "Click a source component, then click a target component to draw a signal link."
-              : "Drag components from the palette. Click a node to inspect and edit."}
+              : "Drag components from the palette. Drag empty space to pan, scroll to zoom."}
           </p>
         </section>
 

@@ -241,6 +241,17 @@ canvas {
   border: 1px dashed rgba(255, 255, 255, 0.12);
   background: linear-gradient(135deg, #111521 0%, #0d1018 100%);
   overflow: hidden;
+  cursor: grab;
+}
+
+.canvas-area.panning {
+  cursor: grabbing;
+}
+
+.canvas-content {
+  position: absolute;
+  inset: 0;
+  transform-origin: top left;
 }
 
 .canvas-area.connect {
