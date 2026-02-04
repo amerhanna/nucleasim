@@ -1,0 +1,26 @@
+NucleaSim Studio
+================
+
+A React-based control system builder for assembling and connecting common automation components.
+
+Quick start
+-----------
+1. Start a static server in the repo root:
+
+   ```bash
+   python -m http.server 8000
+   ```
+
+2. Open the app at http://localhost:8000/index.html
+
+Features
+--------
+- Drag-and-drop palette for PID, plant, sensor, summing junction, and filter blocks
+- Canvas layout with visual signal connections
+- Component inspector for tuning parameters
+- Activity feed and connection summary for quick audits
+
+Notes
+-----
+- The UI uses React from a CDN and requires network access.
+- If you see a blank page, ensure JavaScript is enabled and the files are served over HTTP.
