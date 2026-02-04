@@ -50,6 +50,12 @@ body {
   font-weight: 600;
 }
 
+.subtitle {
+  margin-top: 8px;
+  color: var(--muted);
+  max-width: 520px;
+}
+
 .header-actions {
   display: flex;
   gap: 12px;
@@ -121,11 +127,11 @@ button.primary:hover {
 }
 
 .canvas-panel {
-  grid-column: span 6;
+  grid-column: span 7;
 }
 
 .code-panel {
-  grid-column: span 6;
+  grid-column: span 5;
 }
 
 .field {
@@ -155,6 +161,53 @@ select {
   margin-bottom: 10px;
 }
 
+.palette-panel {
+  grid-column: span 3;
+}
+
+.inspector-panel {
+  grid-column: span 5;
+}
+
+.palette-list {
+  display: grid;
+  gap: 12px;
+}
+
+.palette-card {
+  background: var(--panel-strong);
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid transparent;
+  cursor: grab;
+  transition: border 0.2s ease, transform 0.2s ease;
+}
+
+.palette-card p {
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.palette-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.palette-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(110, 231, 255, 0.3);
+}
+
+.palette-title {
+  font-weight: 600;
+}
+
+.activity {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .parameter-fields {
   display: flex;
   flex-direction: column;
@@ -181,7 +234,71 @@ canvas {
   border: 1px solid var(--border);
 }
 
-.canvas-status {
+.canvas-area {
+  position: relative;
+  height: 420px;
+  border-radius: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  background: linear-gradient(135deg, #111521 0%, #0d1018 100%);
+  overflow: hidden;
+}
+
+.canvas-area.connect {
+  border-color: rgba(110, 231, 255, 0.6);
+}
+
+.connection-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.connection-line {
+  stroke: #6ee7ff;
+  stroke-width: 2;
+  fill: none;
+  opacity: 0.6;
+}
+
+.node-card {
+  position: absolute;
+  width: 150px;
+  height: 84px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(31, 36, 48, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: grab;
+  color: var(--text);
+}
+
+.node-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(110, 231, 255, 0.25);
+}
+
+.node-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.node-meta {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.node-tags {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.canvas-hint {
   margin-top: 12px;
   font-size: 0.85rem;
   color: var(--muted);
@@ -206,6 +323,23 @@ canvas {
   font-size: 0.85rem;
 }
 
+.inspector-body h3 {
+  margin-bottom: 6px;
+}
+
+.inspector-empty {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.summary-list {
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .noscript {
   margin: 20px auto;
   max-width: 960px;
@@ -218,9 +352,11 @@ canvas {
 }
 
 @media (max-width: 1024px) {
+  .palette-panel,
+  .canvas-panel,
+  .inspector-panel,
   .model-panel,
   .parameter-panel,
-  .canvas-panel,
   .code-panel {
     grid-column: span 12;
   }

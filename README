@@ -1,7 +1,7 @@
 NucleaSim Studio
 ================
 
-A lightweight, browser-based scientific simulation workspace inspired by Modelica.
+A React-based control system builder for assembling and connecting common automation components.
 
 Quick start
 -----------
@@ -15,12 +15,12 @@ Quick start
 
 Features
 --------
-- Model explorer with three presets (Mass-Spring-Damper, Predator–Prey, Thermal Network)
-- Parameter deck with live editing and runtime metrics
-- Canvas-based plot with Run/Pause/Reset controls
-- Pseudo-Modelica script panel and scenario insights
+- Drag-and-drop palette for PID, plant, sensor, summing junction, and filter blocks
+- Canvas layout with visual signal connections
+- Component inspector for tuning parameters
+- Activity feed and connection summary for quick audits
 
 Notes
 -----
-- The simulation uses a 4th-order Runge–Kutta (RK4) integrator in the browser.
+- The UI uses React from a CDN and requires network access.
 - If you see a blank page, ensure JavaScript is enabled and the files are served over HTTP.
