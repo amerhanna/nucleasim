@@ -1,0 +1,26 @@
+NucleaSim Studio
+================
+
+A lightweight, browser-based scientific simulation workspace inspired by Modelica.
+
+Quick start
+-----------
+1. Start a static server in the repo root:
+
+   ```bash
+   python -m http.server 8000
+   ```
+
+2. Open the app at http://localhost:8000/index.html
+
+Features
+--------
+- Model explorer with three presets (Mass-Spring-Damper, Predator–Prey, Thermal Network)
+- Parameter deck with live editing and runtime metrics
+- Canvas-based plot with Run/Pause/Reset controls
+- Pseudo-Modelica script panel and scenario insights
+
+Notes
+-----
+- The simulation uses a 4th-order Runge–Kutta (RK4) integrator in the browser.
+- If you see a blank page, ensure JavaScript is enabled and the files are served over HTTP.
